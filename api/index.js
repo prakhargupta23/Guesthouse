@@ -25,7 +25,7 @@ app.use(cookieParser());
 app.use('/uploads', express.static(__dirname+'/uploads'));
 app.use(cors({
   credentials: true,
-  origin: 'http://127.0.0.1:5173',
+  origin: ['http://127.0.0.1:5173','http://localhost:5173'],
 }));
 
 async function uploadToS3(path, originalFilename, mimetype) {
@@ -59,14 +59,14 @@ function getUserDataFromReq(req) {
 }
 
 app.get('/api/test', (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   res.json('test ok');
 });
 
 app.post('/api/register', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const {name,email,password} = req.body;
-
+  console.log(name,email,password);
   try {
     const userDoc = await User.create({
       name,
@@ -81,7 +81,8 @@ app.post('/api/register', async (req,res) => {
 });
 
 app.post('/api/login', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  console.log("jcndskj")
+  mongoose.connect(process.env.MONGODB_URI);
   const {email,password} = req.body;
   const userDoc = await User.findOne({email});
   if (userDoc) {
@@ -103,7 +104,7 @@ app.post('/api/login', async (req,res) => {
 });
 
 app.get('/api/profile', (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const {token} = req.cookies;
   if (token) {
     jwt.verify(token, jwtSecret, {}, async (err, userData) => {
@@ -134,17 +135,17 @@ app.post('/api/upload-by-link', async (req,res) => {
 
 const photosMiddleware = multer({dest:'/tmp'});
 app.post('/api/upload', photosMiddleware.array('photos', 100), async (req,res) => {
-  const uploadedFiles = [];
-  for (let i = 0; i < req.files.length; i++) {
-    const {path,originalname,mimetype} = req.files[i];
-    const url = await uploadToS3(path, originalname, mimetype);
-    uploadedFiles.push(url);
-  }
-  res.json(uploadedFiles);
+  // const uploadedFiles = [];
+  // for (let i = 0; i < req.files.length; i++) {
+  //   const {path,originalname,mimetype} = req.files[i];
+  //   const url = await uploadToS3(path, originalname, mimetype);
+  //   uploadedFiles.push(url);
+  // }
+  // res.json(uploadedFiles);
 });
 
 app.post('/api/places', (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const {token} = req.cookies;
   const {
     title,address,addedPhotos,description,price,
@@ -162,7 +163,7 @@ app.post('/api/places', (req,res) => {
 });
 
 app.get('/api/user-places', (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const {token} = req.cookies;
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
     const {id} = userData;
@@ -171,13 +172,13 @@ app.get('/api/user-places', (req,res) => {
 });
 
 app.get('/api/places/:id', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const {id} = req.params;
   res.json(await Place.findById(id));
 });
 
 app.put('/api/places', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const {token} = req.cookies;
   const {
     id, title,address,addedPhotos,description,
@@ -198,12 +199,12 @@ app.put('/api/places', async (req,res) => {
 });
 
 app.get('/api/places', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   res.json( await Place.find() );
 });
 
 app.post('/api/bookings', async (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const userData = await getUserDataFromReq(req);
   const {
     place,checkIn,checkOut,numberOfGuests,name,phone,price,
@@ -221,7 +222,7 @@ app.post('/api/bookings', async (req, res) => {
 
 
 app.get('/api/bookings', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
+  mongoose.connect(process.env.MONGODB_URI);
   const userData = await getUserDataFromReq(req);
   res.json( await Booking.find({user:userData.id}).populate('place') );
 });
